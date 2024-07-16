@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 
 class ApiService {
@@ -34,6 +35,22 @@ class ApiService {
       await _dio.delete('/generate/$id');
     } catch (e) {
       print('Error: $e');
+    }
+  }
+
+  Future<bool> validateLogin(String username, String password) async {
+    try {
+      final response = await _dio.get('/generate');
+      final data = response.data as List<dynamic>;
+      for (var item in data) {
+        if (item['Name'] == username && item['code'] == password) {
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      print('Error: $e');
+      return false;
     }
   }
 }

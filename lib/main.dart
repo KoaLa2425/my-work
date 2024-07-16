@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:simple_barcode_scanner/simple_barcode_scanner.dart';
+import 'package:test_project/Login.dart';
 import 'api_service.dart';
 
 void main() {
@@ -73,33 +74,43 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Column(
         children: [
-          ListView.builder(
-            itemCount: _data.length,
-            itemBuilder: (context, index) {
-              final item = _data[index];
-              return ListTile(
-                title: Text(item['Name']),
-                subtitle: Text(item['code']),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.edit),
-                      onPressed: () => _updateItem(item['id']),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.delete),
-                      onPressed: () => _deleteItem(item['id']),
-                    ),
-                  ],
+          Expanded(
+            child: ListView.builder(
+              itemCount: _data.length,
+              itemBuilder: (context, index) {
+                final item = _data[index];
+                return ListTile(
+                  title: Text("Username: " + item['Name']),
+                  subtitle: Text("Password: " + item['code']),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.edit),
+                        onPressed: () => _updateItem(item['id']),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.delete),
+                        onPressed: () => _deleteItem(item['id']),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+
+          ElevatedButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LoginScreen(),
                 ),
               );
             },
+            child: const Text('Login'),
           ),
-          ElevatedButton(
-            onPressed: () {},
-            child: const Text('Open Scanner'),
-          )
         ],
       ),
       floatingActionButton: FloatingActionButton(
