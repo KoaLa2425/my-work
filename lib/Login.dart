@@ -1,5 +1,4 @@
 import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:simple_barcode_scanner/simple_barcode_scanner.dart';
 import 'api_service.dart';
@@ -31,7 +30,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  //final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final ApiService _apiService = ApiService();
   String _response = '';
@@ -60,20 +59,33 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            ElevatedButton(
-              onPressed: () async {
-                var res = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SimpleBarcodeScannerPage(),
-                    ));
-                setState(() {
-                  if (res is String) {
-                    result = res;
-                  }
-                });
-              },
-              child: const Text('Open Scanner'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Expanded(
+                  child: TextField(
+                    controller: _usernameController,
+                    decoration: const InputDecoration(labelText: 'Username'),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () async {
+                    var res = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const SimpleBarcodeScannerPage(),
+                        ));
+                    setState(() {
+                      if (res is String) {
+                        result = res;
+                        _usernameController.text = result!;
+                      }
+                    });
+                  },
+                  icon: const Icon(Icons.camera_alt),
+                ),
+              ],
             ),
             TextField(
               controller: _passwordController,
@@ -84,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ElevatedButton(
               onPressed: () {
                 log('result');
-                login(result);
+                login(_usernameController.text);
               },
               child: const Text('Login'),
             ),
