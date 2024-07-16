@@ -87,19 +87,22 @@ class _MyHomePageState extends State<MyHomePage> {
                     children: [
                       IconButton(
                         icon: Icon(Icons.edit),
-                        onPressed: () => _updateItem(item['id']),
+                        onPressed: () {
+                          _updateItem(item['id']);
+                        },
                       ),
                       IconButton(
-                        icon: Icon(Icons.delete),
-                        onPressed: () => _deleteItem(item['id']),
-                      ),
+                          icon: Icon(Icons.delete),
+                          onPressed: () {
+                            _deleteItem(item['id']);
+                          }
+                          ),
                     ],
                   ),
                 );
               },
             ),
           ),
-
           ElevatedButton(
             onPressed: () {
               Navigator.push(
