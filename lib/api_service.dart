@@ -14,7 +14,7 @@ class ApiService {
     }
   }
 
-  Future<void> postData(Map<String, dynamic> data) async {
+  Future<void> postData(Map<String, dynamic> data) async { //add like poss to face book
     try {
       await _dio.post('/generate', data: data);
     } catch (e) {
@@ -22,7 +22,7 @@ class ApiService {
     }
   }
 
-  Future<void> putData(String id, Map<String, dynamic> data) async {
+  Future<void> putData(String id, Map<String, dynamic> data) async { // update
     try {
       await _dio.put('/generate/$id', data: data);
     } catch (e) {
@@ -38,7 +38,8 @@ class ApiService {
     }
   }
 
-  Future<bool> validateLogin(String username, String password) async {
+  Future<bool> 
+  validateLogin(String username, String password) async {
     try {
       final response = await _dio.get('/generate');
       final data = response.data as List<dynamic>;

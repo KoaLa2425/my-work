@@ -32,6 +32,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final ApiService _apiService = ApiService();
   List<dynamic> _data = [];
+  final TextEditingController usernameUpdate = TextEditingController();
+  final TextEditingController passwordUpdate = TextEditingController();
 
   @override
   void initState() {
@@ -54,7 +56,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _updateItem(String id) {
-    final updatedItem = {"Name": "Updated User", "code": "updated_code"};
+    final updatedItem = {"Name": usernameUpdate.text, "code": passwordUpdate.text};
     _apiService.putData(id, updatedItem).then((_) {
       _fetchData();
     });
@@ -64,6 +66,48 @@ class _MyHomePageState extends State<MyHomePage> {
     _apiService.deleteData(id).then((_) {
       _fetchData();
     });
+  }
+
+  Future<void> _showMyDialog(String id) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Update Username and Password'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                TextField(
+                  controller: usernameUpdate,
+                  decoration: const InputDecoration(labelText: 'New Username'),
+                ),
+                TextField(
+                  controller: passwordUpdate,
+                  decoration: const InputDecoration(labelText: 'New Password'),
+                  obscureText: true,
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Update'),
+              onPressed: () {
+                _updateItem(id);
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -88,15 +132,15 @@ class _MyHomePageState extends State<MyHomePage> {
                       IconButton(
                         icon: Icon(Icons.edit),
                         onPressed: () {
-                          _updateItem(item['id']);
+                          _showMyDialog(item['id']);
                         },
                       ),
                       IconButton(
-                          icon: Icon(Icons.delete),
-                          onPressed: () {
-                            _deleteItem(item['id']);
-                          }
-                          ),
+                        icon: Icon(Icons.delete),
+                        onPressed: () {
+                          _deleteItem(item['id']);
+                        },
+                      ),
                     ],
                   ),
                 );
