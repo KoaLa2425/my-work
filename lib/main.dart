@@ -32,8 +32,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final ApiService _apiService = ApiService();
   List<dynamic> _data = [];
-  final TextEditingController usernameUpdate = TextEditingController();
-  final TextEditingController passwordUpdate = TextEditingController();
+  final TextEditingController Username = TextEditingController();
+  final TextEditingController Password = TextEditingController();
 
   @override
   void initState() {
@@ -49,14 +49,14 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _addItem() {
-    final newItem = {"Name": "New User", "code": "new_code"};
+    final newItem = {"Name": Username.text, "code": Password.text};
     _apiService.postData(newItem).then((_) {
       _fetchData();
     });
   }
 
   void _updateItem(String id) {
-    final updatedItem = {"Name": usernameUpdate.text, "code": passwordUpdate.text};
+    final updatedItem = {"Name": Username.text, "code": Password.text};
     _apiService.putData(id, updatedItem).then((_) {
       _fetchData();
     });
@@ -68,7 +68,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Future<void> _showMyDialog(String id) async {
+  Future<void> Edit_Popup(String id) async {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -79,11 +79,11 @@ class _MyHomePageState extends State<MyHomePage> {
             child: ListBody(
               children: <Widget>[
                 TextField(
-                  controller: usernameUpdate,
+                  controller: Username,
                   decoration: const InputDecoration(labelText: 'New Username'),
                 ),
                 TextField(
-                  controller: passwordUpdate,
+                  controller: Password,
                   decoration: const InputDecoration(labelText: 'New Password'),
                   obscureText: true,
                 ),
@@ -95,6 +95,48 @@ class _MyHomePageState extends State<MyHomePage> {
               child: const Text('Update'),
               onPressed: () {
                 _updateItem(id);
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> AddPopup() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('ADD Username and Password'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                TextField(
+                  controller: Username,
+                  decoration: const InputDecoration(labelText: 'New Username'),
+                ),
+                TextField(
+                  controller: Password,
+                  decoration: const InputDecoration(labelText: 'New Password'),
+                  obscureText: true,
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Add'),
+              onPressed: () {
+                _addItem();
                 Navigator.of(context).pop();
               },
             ),
@@ -132,7 +174,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       IconButton(
                         icon: Icon(Icons.edit),
                         onPressed: () {
-                          _showMyDialog(item['id']);
+                          Edit_Popup(item['id']);
                         },
                       ),
                       IconButton(
@@ -161,7 +203,9 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _addItem,
+        onPressed: () {
+          AddPopup();
+        },
         child: const Icon(Icons.add),
       ),
     );
