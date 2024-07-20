@@ -33,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
     if (token == null) {
-      throw Exception('No token found');
+      throw Exception('ไม่พบโทเค็น');
     }
 
     final url = Uri.parse('$baseUrl/user');
@@ -52,7 +52,7 @@ class _LoginPageState extends State<LoginPage> {
         'fullname': jsonResponse['fullname'],
       };
     } else {
-      throw Exception('Failed to get user info');
+      throw Exception('ไม่สามารถรับข้อมูลผู้ใช้ได้');
     }
   }
 
@@ -62,7 +62,7 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     setState(() => _isLoading = true);
-    print('Starting login process');
+    print('เริ่มกระบวนการเข้าสู่ระบบ');
 
     final url = Uri.parse('$baseUrl/auth/login');
     final headers = {'Content-Type': 'application/json'};
@@ -76,8 +76,8 @@ class _LoginPageState extends State<LoginPage> {
       try {
         final response = await http.post(url, headers: headers, body: body)
             .timeout(const Duration(seconds: 10));
-        print('Response status: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        print('สถานะการตอบกลับ: ${response.statusCode}');
+        print('เนื้อหาการตอบกลับ: ${response.body}');
 
         if (response.statusCode == 200) {
           final jsonResponse = jsonDecode(response.body);
@@ -85,7 +85,7 @@ class _LoginPageState extends State<LoginPage> {
           final username = jsonResponse['username'] ?? '';
           final fullname = jsonResponse['fullname'] ?? '';
 
-          // บันทึก token และข้อมูลผู้ใช้
+          // บันทึกโทเค็นและข้อมูลผู้ใช้
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('auth_token', token);
           await prefs.setString('username', username);
@@ -109,7 +109,7 @@ class _LoginPageState extends State<LoginPage> {
       } on TimeoutException {
         _showSnackBar('การเชื่อมต่อหมดเวลา กรุณาลองใหม่อีกครั้ง');
       } catch (e) {
-        print('Error during login: $e');
+        print('เกิดข้อผิดพลาดระหว่างเข้าสู่ระบบ: $e');
         _showSnackBar('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
       } finally {
         retries--;
@@ -190,13 +190,13 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _usernameController,
-                  decoration: const InputDecoration(labelText: "Username"),
+                  decoration: const InputDecoration(labelText: "ชื่อผู้ใช้"),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'กรุณากรอก Username';
+                      return 'กรุณากรอกชื่อผู้ใช้';
                     }
                     if (value.length < 3) {
-                      return 'Username ต้องมีความยาวอย่างน้อย 3 ตัวอักษร';
+                      return 'ชื่อผู้ใช้ต้องมีความยาวอย่างน้อย 3 ตัวอักษร';
                     }
                     return null;
                   },
@@ -205,13 +205,13 @@ class _LoginPageState extends State<LoginPage> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: "Password"),
+                  decoration: const InputDecoration(labelText: "รหัสผ่าน"),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'กรุณากรอก Password';
+                      return 'กรุณากรอกรหัสผ่าน';
                     }
                     if (value.length < 6) {
-                      return 'Password ต้องมีความยาวอย่างน้อย 6 ตัวอักษร';
+                      return 'รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร';
                     }
                     return null;
                   },
@@ -228,14 +228,14 @@ class _LoginPageState extends State<LoginPage> {
                                 AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : const Text('Login'),
+                      : const Text('เข้าสู่ระบบ'),
                 ),
                 const SizedBox(height: 10),
                 TextButton(
                   onPressed: () {
                     Navigator.pushNamed(context, '/register');
                   },
-                  child: const Text('Don\'t have an account? Register'),
+                  child: const Text('ไม่มีบัญชีใช่ไหม? สมัครสมาชิก'),
                 ),
               ],
             ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:test_project/edit_page.dart';
+import 'package:test_project/productlist_page.dart';
 import 'package:test_project/home_page.dart';
 import 'package:test_project/profile_page.dart'; // แก้ชื่อ import เป็น profile_page.dart
 
@@ -40,7 +40,7 @@ class _IndexPageState extends State<IndexPage> {
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Home', icon: Icon(Icons.home)),
-              Tab(text: 'Edit', icon: Icon(Icons.settings)),
+              Tab(text: 'Edit', icon: Icon(Icons.add_business)),
               Tab(text: 'Profile', icon: Icon(Icons.person)),
             ],
           ),
@@ -48,7 +48,7 @@ class _IndexPageState extends State<IndexPage> {
         body: TabBarView(
           children: [
             HomePage(),
-            EditPage(),
+            ProductListPage(),
             ProfilePage(
               username: _username,
               fullname: _fullname,
