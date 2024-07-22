@@ -2,24 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Product Management',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const ProductListPage(),
-    );
-  }
-}
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Product {
   final String? id;
@@ -53,6 +36,19 @@ class Product {
       'category': category,
       'price': price,
     };
+  }
+}
+
+class AuthService {
+  Future<bool> isLoggedIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    return token != null;
+  }
+
+  Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
   }
 }
 
@@ -117,7 +113,7 @@ class ProductService {
 }
 
 class ProductListPage extends StatefulWidget {
-  const ProductListPage({Key? key}) : super(key: key);
+  const ProductListPage({Key? key, required String username}) : super(key: key);
 
   @override
   _ProductListPageState createState() => _ProductListPageState();
@@ -125,12 +121,22 @@ class ProductListPage extends StatefulWidget {
 
 class _ProductListPageState extends State<ProductListPage> {
   final ProductService _productService = ProductService();
+  final AuthService _authService = AuthService();
   List<Product> _products = [];
 
   @override
   void initState() {
     super.initState();
-    _loadProducts();
+    _checkLoginStatusAndLoadProducts();
+  }
+
+  Future<void> _checkLoginStatusAndLoadProducts() async {
+    final isLoggedIn = await _authService.isLoggedIn();
+    if (!isLoggedIn) {
+      _redirectToLoginPage();
+    } else {
+      _loadProducts();
+    }
   }
 
   Future<void> _loadProducts() async {
@@ -144,39 +150,109 @@ class _ProductListPageState extends State<ProductListPage> {
     }
   }
 
-  Future<void> _addProduct(Product product) async {
+  void _redirectToLoginPage() {
+    Navigator.of(context).pushReplacementNamed('/login');
+  }
+
+  Future<Product> _addProduct(Product product) async {
     try {
-      final newProduct = await _productService.addProduct(product);
-      setState(() {
-        _products.add(newProduct);
-      });
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+
+      print('Sending product data: ${product.toJson()}');
+
+      final response = await http.post(
+        Uri.parse(
+            '${ProductService.baseUrl}${ProductService.addProductEndpoint}'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(product.toJson()),
+      );
+
+      print('Response status: ${response.statusCode}'); // เพิ่ม logging
+      print('Response body: ${response.body}'); // เพิ่ม logging
+
+      if (response.statusCode == 201) {
+        return Product.fromJson(jsonDecode(response.body)['product']);
+      } else {
+        throw Exception('Failed to add product: ${response.body}');
+      }
     } catch (e) {
-      _showErrorDialog('Failed to add product');
+      print('Error in addProduct: $e'); // เพิ่ม logging
+      throw Exception('Failed to add product: $e');
     }
   }
 
   Future<void> _editProduct(String id, Product product) async {
     try {
-      final updatedProduct = await _productService.editProduct(id, product);
-      setState(() {
-        final index = _products.indexWhere((p) => p.id == id);
-        if (index != -1) {
-          _products[index] = updatedProduct;
-        }
-      });
+      print('Attempting to edit product with id: $id');
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+
+      final response = await http.put(
+        Uri.parse(
+            '${ProductService.baseUrl}${ProductService.editProductEndpoint}/$id'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(product.toJson()),
+      );
+
+      print('Edit response status: ${response.statusCode}');
+      print('Edit response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final updatedProduct =
+            Product.fromJson(jsonDecode(response.body)['product']);
+        setState(() {
+          final index = _products.indexWhere((p) => p.id == id);
+          if (index != -1) {
+            _products[index] = updatedProduct;
+          }
+        });
+        print(
+            'Product updated in list. Product details: ${updatedProduct.toJson()}');
+      } else {
+        throw Exception('Failed to edit product: ${response.body}');
+      }
     } catch (e) {
-      _showErrorDialog('Failed to edit product');
+      print('Error in _editProduct: $e');
+      _showErrorDialog('Failed to edit product: $e');
     }
   }
 
   Future<void> _removeProduct(String id) async {
     try {
-      await _productService.deleteProduct(id);
-      setState(() {
-        _products.removeWhere((product) => product.id == id);
-      });
+      print('Attempting to delete product with id: $id');
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+
+      final response = await http.delete(
+        Uri.parse(
+            '${ProductService.baseUrl}${ProductService.deleteProductEndpoint}/$id'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('Delete response status: ${response.statusCode}');
+      print('Delete response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _products.removeWhere((product) => product.id == id);
+        });
+        print('Product removed from list. New length: ${_products.length}');
+      } else {
+        throw Exception('Failed to delete product: ${response.body}');
+      }
     } catch (e) {
-      _showErrorDialog('Failed to delete product');
+      print('Error in _removeProduct: $e');
+      _showErrorDialog('Failed to delete product: $e');
     }
   }
 
@@ -194,6 +270,7 @@ class _ProductListPageState extends State<ProductListPage> {
         ],
       ),
     );
+    print('Error occurred: $message'); // เพิ่ม logging
   }
 
   @override
@@ -218,7 +295,10 @@ class _ProductListPageState extends State<ProductListPage> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete),
-                  onPressed: () => _removeProduct(product.id!),
+                  onPressed: () {
+                    print('Delete button pressed for product: ${product.id}');
+                    _removeProduct(product.id!);
+                  },
                 ),
               ],
             ),
@@ -233,15 +313,30 @@ class _ProductListPageState extends State<ProductListPage> {
   }
 
   Future<void> _showProductDialog({Product? product}) async {
+    print('Opening product dialog for ${product?.name ?? 'new product'}');
     final result = await showDialog<Product>(
       context: context,
       builder: (context) => ProductDialog(product: product),
     );
+    print('Dialog result: $result');
     if (result != null) {
-      if (product == null) {
-        await _addProduct(result);
-      } else {
-        await _editProduct(product.id!, result);
+      try {
+        if (product == null) {
+          print('Attempting to add new product');
+          final newProduct = await _addProduct(result);
+          print('New product added: ${newProduct.toJson()}');
+          setState(() {
+            _products.add(newProduct);
+          });
+          print('Product list updated, new length: ${_products.length}');
+        } else {
+          print('Attempting to edit product ${product.id}');
+          await _editProduct(product.id!, result);
+        }
+      } catch (e) {
+        print('Error in _showProductDialog: $e');
+        _showErrorDialog(
+            'Failed to ${product == null ? 'add' : 'edit'} product: $e');
       }
     }
   }
@@ -268,7 +363,8 @@ class _ProductDialogState extends State<ProductDialog> {
     super.initState();
     _name = widget.product?.name ?? '';
     _description = widget.product?.description ?? '';
-    _category = widget.product?.category ?? 'Electronics'; // Default value from items
+    _category =
+        widget.product?.category ?? 'Electronics'; // Default value from items
     _price = widget.product?.price ?? 0.0;
   }
 
@@ -347,16 +443,15 @@ class _ProductDialogState extends State<ProductDialog> {
           onPressed: () {
             if (_formKey.currentState!.validate()) {
               _formKey.currentState!.save();
-              Navigator.pop(
-                context,
-                Product(
-                  id: widget.product?.id,
-                  name: _name,
-                  description: _description,
-                  category: _category,
-                  price: _price,
-                ),
+              final product = Product(
+                id: widget.product?.id,
+                name: _name,
+                description: _description,
+                category: _category,
+                price: _price,
               );
+              print('Returning product from dialog: ${product.toJson()}');
+              Navigator.pop(context, product);
             }
           },
           child: Text(widget.product == null ? 'Add' : 'Save'),
