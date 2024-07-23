@@ -51,7 +51,7 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
 
   Future<void> _getProductInfo(String barcode) async {
     try {
-      final response = await http.get(Uri.parse('http://localhost:3001/product/$barcode'));
+      final response = await http.get(Uri.parse('http://localhost:3000/product/$barcode'));
 
       setState(() {
         _isLoading = false;
