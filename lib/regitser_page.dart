@@ -23,7 +23,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     setState(() => _isLoading = true);
 
-    final url = Uri.parse('http://localhost:3000/auth/register'); // แก้ไข URL ตาม API ของคุณ
+    final url = Uri.parse('http://localhost:3001/auth/register'); // แก้ไข URL ตาม API ของคุณ
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},

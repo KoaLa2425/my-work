@@ -48,24 +48,48 @@ class AuthService {
 
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('auth_token');
+    await prefs.clear();
+    print('User logged out, all preferences cleared');
   }
 }
 
 class ProductService {
-  static const String baseUrl = 'http://localhost:3000/product';
+  static const String baseUrl = 'http://localhost:3001/product';
   static const String productsEndpoint = '/products';
   static const String addProductEndpoint = '/add-product';
   static const String editProductEndpoint = '/edit-product';
   static const String deleteProductEndpoint = '/delete-product';
 
   Future<List<Product>> getProducts() async {
-    final response = await http.get(Uri.parse('$baseUrl$productsEndpoint'));
-    if (response.statusCode == 200) {
-      List<dynamic> body = jsonDecode(response.body);
-      return body.map((dynamic item) => Product.fromJson(item)).toList();
-    } else {
-      throw Exception('Failed to load products: ${response.body}');
+    try {
+      print('Attempting to fetch products from: $baseUrl$productsEndpoint');
+
+      final response = await http.get(Uri.parse('$baseUrl$productsEndpoint'));
+
+      print('Response status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+
+        if (jsonResponse.containsKey('products') &&
+            jsonResponse['products'] is List) {
+          List<dynamic> productsJson = jsonResponse['products'];
+          List<Product> products =
+              productsJson.map((item) => Product.fromJson(item)).toList();
+          print('Successfully parsed ${products.length} products');
+          return products;
+        } else {
+          throw Exception(
+              'Unexpected response format: products key not found or not a List');
+        }
+      } else {
+        throw Exception(
+            'Failed to load products. Status code: ${response.statusCode}, Body: ${response.body}');
+      }
+    } catch (e) {
+      print('Error in getProducts: $e');
+      throw Exception('Failed to load products: $e');
     }
   }
 
@@ -113,21 +137,36 @@ class ProductService {
 }
 
 class ProductListPage extends StatefulWidget {
-  const ProductListPage({Key? key, required String username}) : super(key: key);
+  final String username;
 
+  const ProductListPage({Key? key, required this.username}) : super(key: key);
   @override
   _ProductListPageState createState() => _ProductListPageState();
 }
 
 class _ProductListPageState extends State<ProductListPage> {
+  String _username = '';
+  String _fullname = '';
   final ProductService _productService = ProductService();
   final AuthService _authService = AuthService();
   List<Product> _products = [];
 
   @override
+  @override
   void initState() {
     super.initState();
+    _username = widget.username; // เพิ่มบรรทัดนี้
+    _loadUserInfo();
     _checkLoginStatusAndLoadProducts();
+  }
+
+  Future<void> _loadUserInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _username = widget.username; // เพิ่มบรรทัดนี้ถ้ายังไม่มี
+      _fullname = prefs.getString('fullname') ?? '';
+    });
+    print('Loaded user info: $_username, $_fullname');
   }
 
   Future<void> _checkLoginStatusAndLoadProducts() async {
@@ -146,7 +185,8 @@ class _ProductListPageState extends State<ProductListPage> {
         _products = products;
       });
     } catch (e) {
-      _showErrorDialog('Failed to load products');
+      print('Error loading products: $e');
+      _showErrorDialog('Failed to load products: $e');
     }
   }
 
@@ -171,17 +211,21 @@ class _ProductListPageState extends State<ProductListPage> {
         body: jsonEncode(product.toJson()),
       );
 
-      print('Response status: ${response.statusCode}'); // เพิ่ม logging
-      print('Response body: ${response.body}'); // เพิ่ม logging
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
 
       if (response.statusCode == 201) {
         return Product.fromJson(jsonDecode(response.body)['product']);
       } else {
-        throw Exception('Failed to add product: ${response.body}');
+        // แสดงข้อความผิดพลาดที่เฉพาะเจาะจงมากขึ้น
+        final errorMessage =
+            jsonDecode(response.body)['message'] ?? 'Unknown error occurred';
+        throw Exception('Failed to add product: $errorMessage');
       }
     } catch (e) {
-      print('Error in addProduct: $e'); // เพิ่ม logging
-      throw Exception('Failed to add product: $e');
+      print('Error in addProduct: $e');
+      // ส่งต่อข้อผิดพลาดที่เฉพาะเจาะจงมากขึ้น
+      throw Exception('Failed to add product: ${e.toString()}');
     }
   }
 
@@ -277,7 +321,7 @@ class _ProductListPageState extends State<ProductListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Product List'),
+        title: Text('Product List - $_username'),
       ),
       body: ListView.builder(
         itemCount: _products.length,
@@ -336,7 +380,7 @@ class _ProductListPageState extends State<ProductListPage> {
       } catch (e) {
         print('Error in _showProductDialog: $e');
         _showErrorDialog(
-            'Failed to ${product == null ? 'add' : 'edit'} product: $e');
+            'Failed to ${product == null ? 'add' : 'edit'} product: ${e.toString()}');
       }
     }
   }

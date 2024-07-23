@@ -4,9 +4,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:test_project/index_page.dart';
+import 'package:test_project/productlist_page.dart';
 
-const String baseUrl = 'http://localhost:3000'; 
+const String baseUrl = 'http://localhost:3001'; 
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -135,13 +135,13 @@ class _LoginPageState extends State<LoginPage> {
                   body: Center(child: CircularProgressIndicator()),
                 );
               } else if (userSnapshot.hasData) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  Navigator.pushReplacementNamed(
-                    context,
-                    '/index',
-                    arguments: userSnapshot.data,
-                  );
-                });
+               WidgetsBinding.instance.addPostFrameCallback((_) {
+  Navigator.of(context).pushReplacement(
+    MaterialPageRoute(
+      builder: (context) => ProductListPage(username: userSnapshot.data!['username'] ?? ''),
+    ),
+  );
+});
                 return Container();
               } else {
                 return _buildLoginForm();
